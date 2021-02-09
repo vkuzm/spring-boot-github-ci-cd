@@ -10,9 +10,9 @@ on:
     branches: [ main ]
 
 env:
-  AZURE_WEBAPP_NAME: 'spring-boot-ci-cd'   # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: 'staging'      # set this to the path to your web app project, defaults to the repository root
-  JAVA_VERSION: '1.8'                 # set this to the java version to use
+  AZURE_WEBAPP_NAME: 'spring-boot-ci-cd'
+  CONTAINER_REGISTRY: ${{ secrets.REGISTRY_URL }}
+  JAVA_VERSION: '1.8'
 
 jobs:
   test:
@@ -32,6 +32,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Azure authentication
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: ACR authentication
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.CONTAINER_REGISTRY }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}    
     - name: Set up JDK ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v1
       with:
@@ -39,16 +49,14 @@ jobs:
     - name: Build
       run: mvn package -Dmaven.test.skip=true
       
-    - name: Create artifact
-      run: mkdir staging && cp target/*.jar staging
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Package
-        path: staging
+    - name: Docker Build & Push to ACR
+      run: |
+        docker build . -t ${{ env.CONTAINER_REGISTRY }}/springbootapp:${{ github.sha }}
+        docker push ${{ env.CONTAINER_REGISTRY }}/springbootapp:${{ github.sha }} 
       
-    - name: 'Deploy to Azure WebApp'
+    - name: 'Deploy to Azure Web App for Container'
       uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+      with: 
+        app-name: ${{ env.AZURE_WEBAPP_NAME }} 
+        images: ${{ env.CONTAINER_REGISTRY }}/springbootapp:${{ github.sha }}
+        #startup-command: 'npm start'    # Include start up command to start the app container
