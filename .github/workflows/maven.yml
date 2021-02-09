@@ -12,7 +12,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: 'spring-boot-ci-cd'
   CONTAINER_REGISTRY: ${{ secrets.REGISTRY_URL }}
-  CONTAINER_REGISTRY_USERNAME: 'mindzoom'
+  CONTAINER_REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
   JAVA_VERSION: '1.8'
 
 jobs:
@@ -40,7 +40,7 @@ jobs:
     - name: ACR authentication
       uses: azure/docker-login@v1
       with:
-        login-server: ${{ env.CONTAINER_REGISTRY }}
+        #login-server: ${{ env.CONTAINER_REGISTRY }}
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}    
     - name: Set up JDK ${{ env.JAVA_VERSION }}
