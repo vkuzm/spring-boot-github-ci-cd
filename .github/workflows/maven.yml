@@ -12,6 +12,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: 'spring-boot-ci-cd'
   CONTAINER_REGISTRY: ${{ secrets.REGISTRY_URL }}
+  CONTAINER_REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
   JAVA_VERSION: '1.8'
 
 jobs:
@@ -51,9 +52,9 @@ jobs:
       
     - name: Docker Build & Push to ACR
       run: |
-        docker build . -t ${{ secrets.REGISTRY_USERNAME }}/springbootapp:${{ github.sha }}
+        docker build . -t ${{ secrets.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }}
         docker images
-        docker push ${{ secrets.REGISTRY_USERNAME }}/springbootapp:${{ github.sha }} 
+        docker push ${{ secrets.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }} 
       
     - name: 'Deploy to Azure Web App for Container'
       uses: azure/webapps-deploy@v2
