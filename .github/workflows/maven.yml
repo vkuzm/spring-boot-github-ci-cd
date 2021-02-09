@@ -12,7 +12,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: 'spring-boot-ci-cd'
   CONTAINER_REGISTRY: ${{ secrets.REGISTRY_URL }}
-  CONTAINER_REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+  CONTAINER_REGISTRY_USERNAME: 'mindzoom'
   JAVA_VERSION: '1.8'
 
 jobs:
@@ -50,15 +50,14 @@ jobs:
     - name: Build
       run: mvn package -Dmaven.test.skip=true
       
-    - name: Docker Build & Push to ACR
+    - name: Docker Build & Push to container registry
       run: |
         docker build . -t ${{ env.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }}
-        docker images
         docker push ${{ env.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }} 
       
     - name: 'Deploy to Azure Web App for Container'
       uses: azure/webapps-deploy@v2
       with: 
         app-name: ${{ env.AZURE_WEBAPP_NAME }} 
-        images: ${{ env.CONTAINER_REGISTRY }}/springbootapp:${{ github.sha }}
+        images: ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }}
         #startup-command: 'npm start'    # Include start up command to start the app container
