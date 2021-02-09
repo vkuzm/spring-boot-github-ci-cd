@@ -40,7 +40,7 @@ jobs:
       run: mvn package -Dmaven.test.skip=true
       
     - name: Create artifact
-    - run: mkdir staging && cp target/*.jar staging
+      run: mkdir staging && cp target/*.jar staging
     - uses: actions/upload-artifact@v2
       with:
         name: Package
