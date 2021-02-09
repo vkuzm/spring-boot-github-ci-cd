@@ -29,6 +29,8 @@ jobs:
       run: mvn test
 
   build-and-deploy:
+    # run only when pull request is merged
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
