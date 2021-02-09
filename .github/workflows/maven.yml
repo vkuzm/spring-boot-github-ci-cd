@@ -52,6 +52,7 @@ jobs:
     - name: Docker Build & Push to ACR
       run: |
         docker build . -t ${{ secrets.REGISTRY_USERNAME }}/springbootapp:${{ github.sha }}
+        docker images
         docker push ${{ secrets.REGISTRY_USERNAME }}/springbootapp:${{ github.sha }} 
       
     - name: 'Deploy to Azure Web App for Container'
