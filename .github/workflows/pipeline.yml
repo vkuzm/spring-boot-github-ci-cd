@@ -46,7 +46,7 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
     
     #5 Analyze by SonarCube
-    - name: Build and analyze
+    - name: Run tests and code analyzer
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
