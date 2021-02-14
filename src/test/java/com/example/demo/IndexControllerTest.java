@@ -51,6 +51,6 @@ class IndexControllerTest {
     void test5() throws Exception {
         mockMvc.perform(get("/"))
             .andDo(print()).andExpect(status().isOk())
-            .andExpect(content().string(containsString("Hello World")));
+            .andExpect(content().string(containsString("Hello World1")));
     }
 }
