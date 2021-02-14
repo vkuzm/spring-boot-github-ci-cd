@@ -1,0 +1,103 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AZURE_WEBAPP_NAME: 'spring-boot-ci-cd'
+  CONTAINER_REGISTRY: ${{ secrets.REGISTRY_URL }}
+  CONTAINER_REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+  JAVA_VERSION: '1.8'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 
+    
+    #1 Set up JDK
+    - name: Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+  
+    #2 Run tests
+    - name: Run tests
+      run: mvn test
+    
+    #3 Cache sonar dependencies
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    
+    #4 Cache Maven dependencies
+    - name: Cache Maven packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    #5 Analyze by SonarCube
+    - name: Build and analyze
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+      
+      
+  build-and-deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+    - uses: actions/checkout@v2
+    
+    #1 Azure authentication
+    - name: Azure authentication
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    #2 Docker register authentication
+    - name: Docker registry authentication
+      uses: azure/docker-login@v1
+      with:
+        #login-server: ${{ env.CONTAINER_REGISTRY }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}    
+    
+    #3 Set up JDK
+    - name: Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+    
+    #4 Build the project
+    - name: Build
+      run: mvn package -Dmaven.test.skip=true
+      
+    #5 Build the docker container and puth to registry
+    - name: Docker Build & Push to container registry
+      run: |
+        docker build . -t ${{ env.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }}
+        docker push ${{ env.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }} 
+      
+    #6 Deploy the docker container
+    - name: 'Deploy to Azure Web App for Container'
+      uses: azure/webapps-deploy@v2
+      with: 
+        app-name: ${{ env.AZURE_WEBAPP_NAME }} 
+        images: registry.hub.docker.com/${{ env.CONTAINER_REGISTRY_USERNAME }}/springbootapp:${{ github.sha }}
+        #startup-command: 'some command'    # Include start up command to start the app container
