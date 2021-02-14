@@ -87,6 +87,7 @@ jobs:
     - name: Docker Build & Push to container registry
       run: |
         docker build . -t springbootcontainertest.azurecr.io/springbootapp:${{ github.sha }}
+        docker login springbootcontainertest.azurecr.io -u ${{ secrets.AZURE_REGISTRY_USERNAME }} -p ${{ secrets.AZURE_REGISTRY_PASSWORD }} 
         docker push springbootcontainertest.azurecr.io/springbootapp:${{ github.sha }} 
       
     #6 Deploy the docker container
