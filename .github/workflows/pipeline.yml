@@ -28,12 +28,8 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: ${{ env.JAVA_VERSION }}
-  
-    #2 Run tests
-    - name: Run tests
-      run: mvn test
     
-    #3 Cache sonar dependencies
+    #2 Cache sonar dependencies
     - name: Cache SonarCloud packages
       uses: actions/cache@v1
       with:
@@ -41,7 +37,7 @@ jobs:
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
     
-    #4 Cache Maven dependencies
+    #3 Cache Maven dependencies
     - name: Cache Maven packages
       uses: actions/cache@v1
       with:
@@ -49,13 +45,12 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     
-    #5 Analyze by SonarCube
-    - name: Build and analyze
+    #4 Build & Run tests & Analyze by SonarCube
+    - name: Run tests and static analyzer
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-      
       
   build-and-deploy:
     if: github.event_name != 'pull_request'
